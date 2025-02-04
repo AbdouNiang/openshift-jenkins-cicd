@@ -3,25 +3,32 @@ pipeline {
 
     stages {
         stage('Install Maven') {
-            steps {
-                script {
-                    // Vérifie si Maven est installé, sinon l'installe
-                    sh """
-                    if ! command -v mvn &> /dev/null
-                    then
-                        echo "Maven n'est pas installé. Installation de Maven..."
-                        curl -sL https://apache.claz.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz -o /tmp/maven.tar.gz
-                        tar -xzvf /tmp/maven.tar.gz -C /opt
-                        echo "export M2_HOME=/opt/apache-maven-3.8.6" >> ~/.bashrc
-                        echo "export PATH=\$M2_HOME/bin:\$PATH" >> ~/.bashrc
-                        source ~/.bashrc
-                    else
-                        echo "Maven est déjà installé."
-                    fi
-                    """
-                }
-            }
+    steps {
+        script {
+            // Vérifie si Maven est installé, sinon l'installe
+            sh """
+            if ! command -v mvn &> /dev/null
+            then
+                echo "Maven n'est pas installé. Installation de Maven..."
+                curl -sL https://downloads.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz -o /tmp/maven.tar.gz
+                # Vérifie si le fichier est bien téléchargé
+                file_type=\$(file /tmp/maven.tar.gz)
+                if [[ \$file_type != *"gzip compressed data"* ]]; then
+                    echo "Erreur : Le fichier téléchargé n'est pas un fichier gzip valide."
+                    exit 1
+                fi
+                tar -xzvf /tmp/maven.tar.gz -C /opt
+                echo "export M2_HOME=/opt/apache-maven-3.8.6" >> ~/.bashrc
+                echo "export PATH=\$M2_HOME/bin:\$PATH" >> ~/.bashrc
+                source ~/.bashrc
+            else
+                echo "Maven est déjà installé."
+            fi
+            """
         }
+    }
+}
+
 
         stage('Build App') {
             steps {
